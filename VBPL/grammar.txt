@@ -1,0 +1,10 @@
+| = or
+* = 0 or more of what before it
+
+expr (expression) : term ((PLUS | MINUS) TERM)*
+
+term : factor ((MUL | DIV) factor)
+
+factor : INT | FLOAT
+       : (PLUS|MINUS) factor
+       : LPAREN expr RPAREN
