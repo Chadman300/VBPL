@@ -1,10 +1,65 @@
 | = or
-* = 0 or more of what before it
+* = 0 or more
++ = 1 or more
+f = if
+? = optinal
 
-expr (expression) : term ((PLUS | MINUS) TERM)*
+statements    : NEWLINE* statement (NEWLINE+ statement)* NEWLINE* 
 
-term : factor ((MUL | DIV) factor)
+statement     : KEYWORD: return expr? 
+              : KEYWORD: continue 
+              : KEYWORD: break
+              : expr
 
-factor : INT | FLOAT
-       : (PLUS|MINUS) factor
-       : LPAREN expr RPAREN
+expr          : KEYWORD:V IDENTIFIER EQ expr
+              : comp-expr((KEYWORD:EITHER|KEYWORD:ASWELL)comp-expr)*
+
+comp-expr     : KEYWORD:NO comp-expr
+              : arith-expr ((EE|LE|GT|GTE|LTE)arith-expr)*
+
+arith-expr    : term ((PLUS | MINUS) TERM)*
+
+term          : factor ((MUL | DIV) factor)
+
+factor        : (PLUS|MINUS) factor
+              : power
+
+power         : call (POW factor)*
+
+call          : atom (LPAREN (expr (COMMA expr)*)? RPAREN)?
+
+atom          : INT | FLOAT | STRING | IDENTIFIER
+              : LPAREN expr RPAREN]
+              " list-expr
+              : f-expr
+              : four-expr
+              : whilst-expr
+              : func-def
+
+list-expr     : LSQUARE (expr (COMMA expr)* RSQUARE
+
+f-expr        : KEYWORD: f expr KEYWORD: after
+                (statement f-expr-b|f-expr-c?) 
+                | (NEWLINE statements KEYWORD: end f-expr-b|f-expr-c)
+
+f-expr-b      : KEYWORD: ef expr KEYWORD: after
+                (statement f-expr-b|f-expr-c?) 
+                | (NEWLINE statements KEYWORD: end f-expr-b|f-expr-c)
+
+f-expr-c      : KEYWORD: e
+                statement
+                | (NEWLINE statements KEYWORD: end)
+
+four-expr     : KEYWORD:four IDENTIFIER EQ expr KEYWORD:TO expr
+                (KEYWORD: STEP expr)? KEYWORD:after
+                statement
+                | (NEWLINE statements KEYWORD: end)
+
+whilst-expr   : KEYWORD:whilst expr KEYWORD:after 
+                statement
+                | (NEWLINE statements KEYWORD: end)
+
+func-def      : KEYWORD:op IDENTIFIER?
+                LPAREN (IDENTIFIER (COMMA IDENTIFIER)*)? RPAREN
+                (ARROW expr)
+                | (NEWLINE statements KEYWORD: end)

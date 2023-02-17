@@ -1,16 +1,18 @@
 import basic
 
-exit = False
-while exit == False:
+while True:
     #input
-    text = input('VBPL > ')
-    print(text)
+    text = input('VBPL > ') 
+    if text.strip() == "": continue
     if text ==  "exit":
-        exit = True
+        break
 
-    #grab result and errors from the basic script
     result, error = basic.run('<joe.vb>', text)
 
     if error:
         print(error.as_string())
-    else: print(result)
+    elif result: 
+        if len(result.elements) == 1:
+            print(repr(result.elements[0]))
+        else:
+            print(repr(result))
