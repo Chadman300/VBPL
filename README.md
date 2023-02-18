@@ -44,10 +44,19 @@ Content: (view grammar for syntax info)
 4. Varibles
   V insertName = insertValue
 
-5. Math and Values
+5. Math Values and Symbols
   varible = mathPIE (just pi)
 
   int value (just a num)
   floating point (just a floating point)
   bool (just true or false)
   null (just null)
+
+  + (plus)
+  - (minus)
+  * (multiplication)
+  / (division)
+  $ (power)
+  @ (comment)
+  ; (end optional and mostly used for one liners)
+  -> (arrow for methods)
