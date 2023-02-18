@@ -1,0 +1,2 @@
+V num = rnd(1,6)
+print(num)
