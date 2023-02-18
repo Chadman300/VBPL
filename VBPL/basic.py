@@ -2,7 +2,7 @@
 ### IMPORTS ##################
 ##############################
 
-from strings_with_arrows import *
+#from strings_with_arrows import *
 import string
 import os
 import random
@@ -34,7 +34,7 @@ class Error:
         #result += '\n\n' + string_with_arrows(self.pos_start.ftxt, self.pos_start, self.pos_end)
         return result
 
-class IllegalCharError(Error):
+class IllegalCharError(Error): 
     def __init__(self, pos_start, pos_end, details):
         super().__init__(pos_start, pos_end, 'Illegal Character', details)
 
@@ -485,8 +485,8 @@ class ForNode:
         self.pos_end = self.body_node.pos_end
 
 class WhileNode:
-    def __init__(self, conditon_node, body_node, should_return_null):
-        self.condition_node = conditon_node
+    def __init__(self, condition_node, body_node, should_return_null):
+        self.condition_node = condition_node
         self.body_node = body_node
         self.should_return_null = should_return_null
 
@@ -520,6 +520,7 @@ class CallNode:
             self.pos_end = self.arg_nodes[len(self.arg_nodes) - 1].pos_end
         else:
             self.pos_end = self.node_to_call.pos_end
+
 
 class ReturnNode:
     def __init__(self, node_to_return, pos_start, pos_end):
@@ -603,8 +604,7 @@ class Parser:
     def parse(self):
         res = self.statments()
         if not res.error and self.current_tok.type != TT_EOF:
-            return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end, 
-            "Expected: '+', '-', '*', '/', '$', '==', '!=', '<', '>', <=', '>=', 'aswell' or 'either'"))
+            return res.failure(InvalidSyntaxError(self.current_tok.pos_start, self.current_tok.pos_end,"Token cannot appear after previous tokens"))
         return res
 
     #################################################
@@ -639,7 +639,7 @@ class Parser:
                 self.reverse(res.to_reverse_count)
                 more_statements = False
                 continue
-            statments.append(statment)\
+            statments.append(statment)
             
         return res.sucsess(ListNode(statments, pos_start, self.current_tok.pos_end.copy())) 
 
@@ -1645,6 +1645,9 @@ class BuiltInFunction(BaseFunction):
     
     def __repr__(self):
         return f"*built in operation, {self.name}*"
+    
+    def ends_with(self, str_, find):
+        return str_.endswith(find)
 
     ###################################################################
 
@@ -1803,30 +1806,41 @@ class BuiltInFunction(BaseFunction):
         return RTResult().success(Number(len(list_.elements)))     
     execute_len.arg_names = ['list']  
 
+    def execute_rnd(self, exec_ctx):
+        start_num = exec_ctx.symbol_table.get("start_num")
+        end_num = exec_ctx.symbol_table.get("end_num")
+            
+        return RTResult().success(Number(random.randint(start_num.value, end_num.value)))  
+    execute_rnd.arg_names = ['start_num', 'end_num']  
+
     def execute_run(self, exec_ctx):
         fn = exec_ctx.symbol_table.get("fn")
 
+        if not self.ends_with(fn.value, ".vbpl"): 
+            return RTResult().failure(RTError(self.pos_start, self.pos_end,
+            "File must be type '.vbpl'", exec_ctx))
+
         if not isinstance(fn, String):
             return RTResult().failure(RTError(self.pos_start, self.pos_end,
-            "Argument must be type String", exec_ctx))
-        
+            "Argument must be string", exec_ctx))
+
         fn = fn.value
 
         try:
             with open(fn, "r") as f:
                 script = f.read()
         except Exception as e:
-            return RTResult().failure(RTError(self.pos_start, self.pos_end,
-            f"Failed to load script \"{fn}\"\n" + str(e), exec_ctx)) 
-        
-        _, error = run(fn, script)
-        if error:
-            return RTResult().failure(RTError(self.pos_start, self.pos_end,
-            f"Failed to finish executing script \"{fn}\"\n" + error.as_string, exec_ctx)) 
-        
-        return RTResult().success(Number.null)
+            return RTResult().failure(RTError(self.pos_start, self.pos_end, 
+            f"Failed to load script \"{fn}\"\n" + str(e), exec_ctx))
 
-    execute_run.arg_names = ['fn'] 
+        _, error = run(fn, script)
+
+        if error:
+            return RTResult().failure(RTError(self.pos_start, self.pos_end, 
+            f"Failed to finish executing script \"{fn}\"\n" + error.as_string(), exec_ctx))
+
+        return RTResult().success(Number.null)
+    execute_run.arg_names = ["fn"]
     
 BuiltInFunction.print         = BuiltInFunction("print")
 BuiltInFunction.printRet      = BuiltInFunction("printRet")
@@ -1846,6 +1860,7 @@ BuiltInFunction.max           = BuiltInFunction("max")
 BuiltInFunction.min           = BuiltInFunction("min")
 BuiltInFunction.len           = BuiltInFunction("len")
 BuiltInFunction.run           = BuiltInFunction("run")
+BuiltInFunction.rnd           = BuiltInFunction("rnd")
     
 ##############################
 ### CONTEXT ##################
@@ -2071,17 +2086,18 @@ class Interpreter:
             condition = res.register(self.visit(node.condition_node, context))
             if res.should_return(): return res
 
-            if not condition.is_true(): break
+            if not condition.is_true():
+                break
 
-            value = (res.register(self.visit(node.body_node, context)))
+            value = res.register(self.visit(node.body_node, context))
             if res.should_return() and res.loop_should_continue == False and res.loop_should_break == False: return res
 
             if res.loop_should_continue:
                 continue
-
+            
             if res.loop_should_break:
                 break
-            
+
             elements.append(value)
 
         return res.success(Number.null if node.should_return_null else List(elements).set_context(context).set_pos(node.pos_start, node.pos_end))
@@ -2160,6 +2176,7 @@ global_symbol_table.set("max", BuiltInFunction.max)
 global_symbol_table.set("min", BuiltInFunction.min)
 global_symbol_table.set("len", BuiltInFunction.len)
 global_symbol_table.set("run", BuiltInFunction.run)
+global_symbol_table.set("rnd", BuiltInFunction.rnd)
 
 
 def run(fn, text):
