@@ -60,3 +60,7 @@ Content: (view grammar for syntax info)
   @ (comment)
   ; (end optional and mostly used for one liners)
   -> (arrow for methods)
+  | (can be used in varible names, simular to _ in Python
+  either (or)
+  aswell (and)
+  no (not)
